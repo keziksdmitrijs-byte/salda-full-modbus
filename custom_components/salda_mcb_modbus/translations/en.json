@@ -1,0 +1,33 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Salda / MCB Modbus TCP",
+        "description": "Enter the connection details of the AHU controller's Modbus TCP gateway.",
+        "data": {
+          "host": "Host / IP address",
+          "port": "Port",
+          "slave_id": "Modbus Slave ID",
+          "scan_interval": "Polling interval (seconds)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect to the device. Check host, port and slave ID.",
+      "unknown": "Unexpected error, see Home Assistant logs for details."
+    },
+    "abort": {
+      "already_configured": "This device is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Salda / MCB Modbus TCP options",
+        "data": {
+          "scan_interval": "Polling interval (seconds)"
+        }
+      }
+    }
+  }
+}

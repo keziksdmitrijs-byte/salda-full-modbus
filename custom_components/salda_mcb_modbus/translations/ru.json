@@ -1,0 +1,33 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Salda / MCB Modbus TCP",
+        "description": "Введите параметры подключения к Modbus TCP шлюзу контроллера вентиляционной установки.",
+        "data": {
+          "host": "IP-адрес / хост",
+          "port": "Порт",
+          "slave_id": "Modbus Slave ID (адрес устройства)",
+          "scan_interval": "Интервал опроса (секунд)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Не удалось подключиться к устройству. Проверьте host, port и slave ID.",
+      "unknown": "Непредвиденная ошибка, подробности — в журнале Home Assistant."
+    },
+    "abort": {
+      "already_configured": "Это устройство уже настроено."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Настройки Salda / MCB Modbus TCP",
+        "data": {
+          "scan_interval": "Интервал опроса (секунд)"
+        }
+      }
+    }
+  }
+}
