@@ -34,3 +34,5 @@ LEVEL_ADJUSTER = "Adjuster"
 LEVEL_SERVICE = "Service"
 
 SIGNAL_NEW_DATA = f"{DOMAIN}_new_data"
+
+PLATFORM_MODULES = ["sensor", "binary_sensor", "number", "select", "switch"]

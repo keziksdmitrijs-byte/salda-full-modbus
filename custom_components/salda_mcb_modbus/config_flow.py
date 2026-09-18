@@ -3,9 +3,7 @@
 Mirrors the "Connection parameters of the recuperator's Modbus TCP
 interface" form: host, TCP port, a slave/unit id slider, a Modbus framing
 dropdown (plain TCP vs RTU-over-TCP for RS-485 gateways), an address-offset
-choice (1 = send documented address as-is, 0 = strict 0-based), a polling
-interval, and an "Add without connection test" checkbox for units that only
-answer some registers and would otherwise fail the probe.
+choice, a polling interval, and an "Add without connection test" checkbox.
 """
 from __future__ import annotations
 
@@ -37,7 +35,6 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SLAVE_ID,
     DOMAIN,
-    FRAMING_OPTIONS,
     FRAMING_RTU_OVER_TCP,
     FRAMING_TCP,
 )
@@ -92,6 +89,14 @@ async def _async_validate_connection(
     exception is always logged with full detail so the HA log shows exactly
     what failed instead of a generic message.
     """
+    if slave_id == 0:
+        _LOGGER.warning(
+            "Slave id 0 is reserved for Modbus broadcast and most devices never "
+            "reply to it; some TCP gateways ignore the unit id and respond "
+            "anyway, but if this unit fails to read most registers, try "
+            "slave id 1 (the Salda MCB factory default) instead"
+        )
+
     hub = SaldaModbusHub(host, port, slave_id, framing=framing, address_offset=address_offset)
     try:
         connected = await hub.async_connect()
@@ -170,8 +175,7 @@ class SaldaModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
 class SaldaModbusOptionsFlow(config_entries.OptionsFlow):
-    """Options flow to adjust connection parameters after setup, without
-    removing and re-adding the integration."""
+    """Options flow to adjust connection parameters after setup."""
 
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         self._config_entry = config_entry

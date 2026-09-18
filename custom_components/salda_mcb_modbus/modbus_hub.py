@@ -1,27 +1,8 @@
 """Modbus hub wrapping pymodbus for the Salda/MCB AHU controller.
 
-Supports two things that were causing "not connecting" problems in the field:
-
-1. Framing choice: some RS-485 -> Ethernet gateways speak plain Modbus TCP
-   (MBAP header), while others just tunnel raw Modbus RTU frames (with CRC)
-   over a TCP socket ("RTU over TCP"). Both are common for cheap gateways
-   used with Salda AHUs. The user picks the right one in the config flow;
-   this hub builds the matching pymodbus client (AsyncModbusTcpClient vs
-   AsyncModbusSerialClient-style framer over TCP is not directly supported by
-   pymodbus, so RTU-over-TCP is implemented via AsyncModbusTcpClient with
-   framer=FramerType.RTU, which is exactly what pymodbus expects for this
-   transport).
-
-2. Address offset choice: the vendor documentation numbers registers
-   starting at 1. Some gateways/firmware expect that address sent on the
-   wire literally (offset=1, i.e. no correction), others expect strict
-   0-based wire addresses (offset=0, i.e. subtract 1). This used to be
-   hardcoded; now it is a user-configurable option because it is the #1
-   reason a correctly-addressed device still failed to respond.
-
-3. pymodbus keyword compatibility: pymodbus 3.10 renamed "slave" to
-   "device_id" on every call. `_device_kwargs()` detects the installed
-   pymodbus version once and always uses the right keyword.
+Supports Modbus TCP and RTU-over-TCP framing, a configurable address offset
+(documented-as-is vs strict 0-based), and both pymodbus keyword conventions
+("slave" pre-3.10, "device_id" from 3.10 onward).
 """
 from __future__ import annotations
 
@@ -35,7 +16,6 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def _pymodbus_device_kwarg_name() -> str:
-    """Return 'device_id' on pymodbus >= 3.10, otherwise 'slave'."""
     try:
         raw_version = getattr(pymodbus, "__version__", "0.0.0")
         parts = raw_version.split(".")[:2]
@@ -51,8 +31,6 @@ _DEVICE_KW = _pymodbus_device_kwarg_name()
 
 
 def _get_rtu_framer():
-    """Return the pymodbus FramerType value for RTU-over-TCP, tolerating
-    the FramerType enum being renamed/moved across pymodbus versions."""
     try:
         from pymodbus import FramerType
 

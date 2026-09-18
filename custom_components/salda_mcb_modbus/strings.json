@@ -16,7 +16,7 @@
       }
     },
     "error": {
-      "cannot_connect": "Cannot connect to the device. Check host, port, slave id and framing, and see the Home Assistant log for the exact pymodbus error. If the unit only answers some registers, enable 'Add without connection test'.",
+      "cannot_connect": "Cannot connect to the device. Check host, port, slave id and framing, and see the Home Assistant log for the exact pymodbus error. Try slave id 1 if you used 0 (0 is the Modbus broadcast address and most devices never reply to it). If the unit only answers some registers, enable 'Add without connection test'.",
       "unknown": "Unexpected error, see Home Assistant logs for details."
     },
     "abort": {

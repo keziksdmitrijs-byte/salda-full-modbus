@@ -1,6 +1,7 @@
 """The Salda/MCB Modbus TCP integration."""
 from __future__ import annotations
 
+import importlib
 import logging
 
 from homeassistant.config_entries import ConfigEntry
@@ -18,6 +19,7 @@ from .const import (
     DEFAULT_FRAMING,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
+    PLATFORM_MODULES,
 )
 from .coordinator import SaldaModbusCoordinator
 from .modbus_hub import SaldaModbusHub
@@ -35,6 +37,28 @@ PLATFORMS: list[Platform] = [
 
 def _merged(entry: ConfigEntry, key: str, default):
     return entry.options.get(key, entry.data.get(key, default))
+
+
+def _preload_platform_modules() -> None:
+    """Import this integration's platform modules (sensor.py, number.py, ...).
+
+    Each of these modules pulls in `registers.py`, a large (~150 KB, ~940
+    dict literals) generated file. Home Assistant's event loop watchdog
+    flags any import that takes non-trivial time as a "blocking call", which
+    is exactly what showed up as:
+
+        Detected blocking call to import_module ... inside the event loop
+        by custom integration 'salda_mcb_modbus' at .../__init__.py, line 62:
+        await hass.config_entries.async_forward_entry_setups(...)
+
+    Running the import here, inside an executor thread, *before* calling
+    `async_forward_entry_setups`, moves that cost off the event loop. Once
+    imported, the module stays cached in `sys.modules`, so the forwarded
+    setup call that follows is effectively instant.
+    """
+    package = f"custom_components.{DOMAIN}"
+    for module_name in PLATFORM_MODULES:
+        importlib.import_module(f"{package}.{module_name}")
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -58,6 +82,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = coordinator
+
+    # Warm up the (large) platform modules off the event loop before
+    # forwarding entry setup, see _preload_platform_modules() docstring.
+    await hass.async_add_executor_job(_preload_platform_modules)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
