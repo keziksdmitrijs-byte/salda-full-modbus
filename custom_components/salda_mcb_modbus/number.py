@@ -25,8 +25,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
 
 
 class SaldaHoldingRegisterNumber(CoordinatorEntity[SaldaModbusCoordinator], NumberEntity):
-    """A read/write Holding Register exposed as a HA number (slider)."""
-
     _attr_has_entity_name = True
     _attr_mode = NumberMode.BOX
 

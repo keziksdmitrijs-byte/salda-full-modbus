@@ -1,11 +1,7 @@
-"""Auto-generated register map for Salda/MCB Modbus integration.
-
-Generated from MCB-1.27 Modbus table. Do not edit by hand — regenerate instead.
-"""
+"""Auto-generated register map for Salda/MCB Modbus integration."""
 
 from __future__ import annotations
 
-# --- NUMBER entities: Holding Registers with numeric range (read/write) ---
 NUMBER_REGISTERS: list[dict] = [
     {'key': "user_config_comfort_mode_temperature_set_point", 'address': 2, 'name': "Comfort mode temperature Set Point", 'min': 16.0, 'max': 30.0, 'step': 0.1, 'scale': 0.1, 'unit': "°C", 'level': "User"},
     {'key': "user_config_air_flow_by_percents", 'address': 3, 'name': "Air  flow control by percents", 'min': 0.0, 'max': 100.0, 'step': 1, 'scale': 1, 'unit': "%", 'level': "User"},
@@ -498,7 +494,6 @@ NUMBER_REGISTERS: list[dict] = [
     {'key': "io_map_mcb_do6", 'address': 997, 'name': "MCB DO6 function", 'min': 0, 'max': 30, 'step': 1, 'scale': 1, 'unit': "", 'level': "User"},
 ]
 
-# --- SELECT entities: Holding Registers with enumerated options (read/write) ---
 SELECT_REGISTERS: list[dict] = [
     {'key': "user_config_current_system_mode", 'address': 1, 'name': "Current system mode", 'options': {0: "Standby", 1: "Building protection", 2: "Economy", 3: "Comfort"}, 'level': "User"},
     {'key': "user_config_remote_mode_switch_type", 'address': 7, 'name': "Remote mode switch type", 'options': {0: "None", 1: "Push button", 2: "OnOff", 3: "PIR"}, 'level': "User"},
@@ -610,7 +605,6 @@ SELECT_REGISTERS: list[dict] = [
     {'key': "cooking_hood_speed", 'address': 203, 'name': "Cooking hood Speed", 'options': {0: "Off", 1: "Speed 1", 2: "Speed 2", 3: "Speed 3", 4: "Boost"}, 'level': "User"},
 ]
 
-# --- SWITCH entities: Coils (read/write boolean) ---
 SWITCH_REGISTERS: list[dict] = [
     {'key': "filter_timer_reset", 'address': 1, 'name': "Filters timer reset", 'level': "User"},
     {'key': "date_and_time_set_command", 'address': 2, 'name': "Date and time set: Set command", 'level': "User"},
@@ -694,7 +688,6 @@ SWITCH_REGISTERS: list[dict] = [
     {'key': "change_password", 'address': 202, 'name': "Change password", 'level': "Service"},
 ]
 
-# --- BINARY_SENSOR entities: Discrete Inputs (read only status/alarms) ---
 BINARY_SENSOR_REGISTERS: list[dict] = [
     {'key': "rotor_broken_belt_warning", 'address': 1, 'name': "Warning! Rotor broken belt alarm", 'is_alarm': True, 'level': "User"},
     {'key': "fireplace_protection_activated", 'address': 2, 'name': "Alarm! Fireplace protection activated", 'is_alarm': True, 'level': "User"},
@@ -855,7 +848,6 @@ BINARY_SENSOR_REGISTERS: list[dict] = [
     {'key': "fire_protection2_input", 'address': 365, 'name': "Fire protection 2 input", 'is_alarm': False, 'level': "Adjuster"},
 ]
 
-# --- SENSOR entities: Input Registers (read only measured values) ---
 SENSOR_REGISTERS: list[dict] = [
     {'key': "current_system_state", 'address': 1, 'name': "Current system state", 'scale': 1, 'unit': "", 'level': "User"},
     {'key': "software_version", 'address': 2, 'name': "Software version", 'scale': 1, 'unit': "", 'level': "User"},

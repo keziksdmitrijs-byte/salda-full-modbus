@@ -23,8 +23,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
 
 
 class SaldaCoilSwitch(CoordinatorEntity[SaldaModbusCoordinator], SwitchEntity):
-    """A read/write Coil exposed as a HA switch."""
-
     _attr_has_entity_name = True
 
     def __init__(self, coordinator, entry_id, reg) -> None:

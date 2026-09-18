@@ -1,11 +1,4 @@
-"""DataUpdateCoordinator for the Salda/MCB Modbus TCP integration.
-
-Polls all registers used by the enabled entity platforms in batched Modbus
-requests (contiguous ranges, capped at MAX_BATCH) to keep TCP round trips low.
-Read failures are recorded per range; if every range fails, UpdateFailed is
-raised so Home Assistant shows the integration/entities as unavailable and
-logs a clear communication error.
-"""
+"""DataUpdateCoordinator for the Salda/MCB Modbus TCP integration."""
 from __future__ import annotations
 
 import logging
@@ -76,10 +69,10 @@ class SaldaModbusCoordinator(DataUpdateCoordinator):
         try:
             connected = await self.hub.async_connect()
         except Exception as err:  # noqa: BLE001
-            raise UpdateFailed(f"Cannot connect to Modbus TCP device: {err}") from err
+            raise UpdateFailed(f"Cannot connect to Modbus device: {err}") from err
 
         if not connected:
-            raise UpdateFailed("Modbus TCP connection failed")
+            raise UpdateFailed("Modbus connection failed")
 
         total_ranges = (
             len(self._hr_ranges) + len(self._coil_ranges)
@@ -125,8 +118,8 @@ class SaldaModbusCoordinator(DataUpdateCoordinator):
 
         if ok_ranges == 0 and total_ranges > 0:
             raise UpdateFailed(
-                "All Modbus read requests failed - check host/port/slave id, "
-                "that the AHU is powered and reachable, and the Home Assistant "
+                "All Modbus read requests failed - check host/port/slave id/framing "
+                "and that the AHU is powered and reachable; see the Home Assistant "
                 "log for the exact pymodbus error"
             )
 

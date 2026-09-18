@@ -7,7 +7,18 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 
-from .const import CONF_HOST, CONF_PORT, CONF_SCAN_INTERVAL, CONF_SLAVE_ID, DEFAULT_SCAN_INTERVAL, DOMAIN
+from .const import (
+    CONF_ADDRESS_OFFSET,
+    CONF_FRAMING,
+    CONF_HOST,
+    CONF_PORT,
+    CONF_SCAN_INTERVAL,
+    CONF_SLAVE_ID,
+    DEFAULT_ADDRESS_OFFSET,
+    DEFAULT_FRAMING,
+    DEFAULT_SCAN_INTERVAL,
+    DOMAIN,
+)
 from .coordinator import SaldaModbusCoordinator
 from .modbus_hub import SaldaModbusHub
 
@@ -22,18 +33,25 @@ PLATFORMS: list[Platform] = [
 ]
 
 
+def _merged(entry: ConfigEntry, key: str, default):
+    return entry.options.get(key, entry.data.get(key, default))
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     host = entry.data[CONF_HOST]
     port = entry.data[CONF_PORT]
     slave_id = entry.data[CONF_SLAVE_ID]
-    scan_interval = entry.options.get(
-        CONF_SCAN_INTERVAL, entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
-    )
+    framing = _merged(entry, CONF_FRAMING, DEFAULT_FRAMING)
+    address_offset = _merged(entry, CONF_ADDRESS_OFFSET, DEFAULT_ADDRESS_OFFSET)
+    scan_interval = _merged(entry, CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
 
-    hub = SaldaModbusHub(host, port, slave_id)
+    hub = SaldaModbusHub(host, port, slave_id, framing=framing, address_offset=address_offset)
     connected = await hub.async_connect()
     if not connected:
-        _LOGGER.warning("Initial connection to %s:%s failed, will retry on next update", host, port)
+        _LOGGER.warning(
+            "Initial connection to %s:%s (framing=%s) failed, will retry on next update",
+            host, port, framing,
+        )
 
     coordinator = SaldaModbusCoordinator(hass, hub, scan_interval)
     await coordinator.async_config_entry_first_refresh()

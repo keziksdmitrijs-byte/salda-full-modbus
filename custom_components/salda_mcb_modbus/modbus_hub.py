@@ -1,17 +1,27 @@
-"""Modbus TCP hub wrapping pymodbus for the Salda/MCB AHU controller.
+"""Modbus hub wrapping pymodbus for the Salda/MCB AHU controller.
 
-Handles two pymodbus compatibility issues that otherwise break this
-integration depending on which pymodbus version Home Assistant installed:
+Supports two things that were causing "not connecting" problems in the field:
 
-1. Address offset: the vendor documentation numbers registers starting at 1,
-   while the Modbus wire protocol (and pymodbus) numbers them starting at 0.
-   ADDRESS_OFFSET below corrects for that on every call.
+1. Framing choice: some RS-485 -> Ethernet gateways speak plain Modbus TCP
+   (MBAP header), while others just tunnel raw Modbus RTU frames (with CRC)
+   over a TCP socket ("RTU over TCP"). Both are common for cheap gateways
+   used with Salda AHUs. The user picks the right one in the config flow;
+   this hub builds the matching pymodbus client (AsyncModbusTcpClient vs
+   AsyncModbusSerialClient-style framer over TCP is not directly supported by
+   pymodbus, so RTU-over-TCP is implemented via AsyncModbusTcpClient with
+   framer=FramerType.RTU, which is exactly what pymodbus expects for this
+   transport).
 
-2. Keyword rename: pymodbus 3.10.0 renamed the "slave" keyword argument to
-   "device_id" on every read/write call. Passing the wrong one raises
-   TypeError, which is exactly what caused the "Unexpected error validating
-   Salda Modbus connection" log entry. `_device_kwarg()` detects the
-   installed pymodbus version once and always uses the right keyword.
+2. Address offset choice: the vendor documentation numbers registers
+   starting at 1. Some gateways/firmware expect that address sent on the
+   wire literally (offset=1, i.e. no correction), others expect strict
+   0-based wire addresses (offset=0, i.e. subtract 1). This used to be
+   hardcoded; now it is a user-configurable option because it is the #1
+   reason a correctly-addressed device still failed to respond.
+
+3. pymodbus keyword compatibility: pymodbus 3.10 renamed "slave" to
+   "device_id" on every call. `_device_kwargs()` detects the installed
+   pymodbus version once and always uses the right keyword.
 """
 from __future__ import annotations
 
@@ -23,14 +33,12 @@ from pymodbus.exceptions import ModbusException
 
 _LOGGER = logging.getLogger(__name__)
 
-ADDRESS_OFFSET = 1  # documented address -> wire address correction
-
 
 def _pymodbus_device_kwarg_name() -> str:
     """Return 'device_id' on pymodbus >= 3.10, otherwise 'slave'."""
     try:
         raw_version = getattr(pymodbus, "__version__", "0.0.0")
-        parts = raw_version.split(".")[:3]
+        parts = raw_version.split(".")[:2]
         major, minor = int(parts[0]), int(parts[1])
         if (major, minor) >= (3, 10):
             return "device_id"
@@ -40,24 +48,60 @@ def _pymodbus_device_kwarg_name() -> str:
 
 
 _DEVICE_KW = _pymodbus_device_kwarg_name()
-_LOGGER.debug("pymodbus %s detected, using '%s' keyword for device id", getattr(pymodbus, "__version__", "?"), _DEVICE_KW)
+
+
+def _get_rtu_framer():
+    """Return the pymodbus FramerType value for RTU-over-TCP, tolerating
+    the FramerType enum being renamed/moved across pymodbus versions."""
+    try:
+        from pymodbus import FramerType
+
+        return FramerType.RTU
+    except ImportError:
+        try:
+            from pymodbus.framer import FramerType
+
+            return FramerType.RTU
+        except ImportError:
+            _LOGGER.warning(
+                "This pymodbus version has no FramerType.RTU; falling back to "
+                "plain Modbus TCP framing"
+            )
+            return None
 
 
 class SaldaModbusHub:
     """Thin async wrapper around pymodbus AsyncModbusTcpClient."""
 
-    def __init__(self, host: str, port: int, slave_id: int) -> None:
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        slave_id: int,
+        framing: str = "tcp",
+        address_offset: int = 1,
+    ) -> None:
         self._host = host
         self._port = port
         self._slave_id = slave_id
+        self._framing = framing
+        self._address_offset = address_offset
         self._client: AsyncModbusTcpClient | None = None
 
     def _device_kwargs(self) -> dict:
         return {_DEVICE_KW: self._slave_id}
 
+    def _make_client(self) -> AsyncModbusTcpClient:
+        kwargs = {"host": self._host, "port": self._port}
+        if self._framing == "rtu_over_tcp":
+            framer = _get_rtu_framer()
+            if framer is not None:
+                kwargs["framer"] = framer
+        return AsyncModbusTcpClient(**kwargs)
+
     async def async_connect(self) -> bool:
         if self._client is None:
-            self._client = AsyncModbusTcpClient(host=self._host, port=self._port)
+            self._client = self._make_client()
         if not self._client.connected:
             await self._client.connect()
         return self._client.connected
@@ -75,12 +119,16 @@ class SaldaModbusHub:
             ok = await self.async_connect()
             if not ok:
                 raise ConnectionError(
-                    f"Unable to connect to Modbus TCP device at {self._host}:{self._port}"
+                    f"Unable to connect to Modbus device at {self._host}:{self._port} "
+                    f"(framing={self._framing})"
                 )
+
+    def _wire_address(self, address: int) -> int:
+        return address - self._address_offset
 
     async def read_holding_registers(self, address: int, count: int = 1):
         await self._ensure_connected()
-        wire_addr = address - ADDRESS_OFFSET
+        wire_addr = self._wire_address(address)
         try:
             resp = await self._client.read_holding_registers(
                 wire_addr, count=count, **self._device_kwargs()
@@ -90,8 +138,7 @@ class SaldaModbusHub:
             return None
         except TypeError as err:
             _LOGGER.error(
-                "pymodbus API mismatch reading HR %s (keyword '%s'): %s. "
-                "Update the integration or pin a compatible pymodbus version.",
+                "pymodbus API mismatch reading HR %s (keyword '%s'): %s",
                 address, _DEVICE_KW, err,
             )
             return None
@@ -102,7 +149,7 @@ class SaldaModbusHub:
 
     async def read_input_registers(self, address: int, count: int = 1):
         await self._ensure_connected()
-        wire_addr = address - ADDRESS_OFFSET
+        wire_addr = self._wire_address(address)
         try:
             resp = await self._client.read_input_registers(
                 wire_addr, count=count, **self._device_kwargs()
@@ -123,7 +170,7 @@ class SaldaModbusHub:
 
     async def read_coils(self, address: int, count: int = 1):
         await self._ensure_connected()
-        wire_addr = address - ADDRESS_OFFSET
+        wire_addr = self._wire_address(address)
         try:
             resp = await self._client.read_coils(
                 wire_addr, count=count, **self._device_kwargs()
@@ -144,7 +191,7 @@ class SaldaModbusHub:
 
     async def read_discrete_inputs(self, address: int, count: int = 1):
         await self._ensure_connected()
-        wire_addr = address - ADDRESS_OFFSET
+        wire_addr = self._wire_address(address)
         try:
             resp = await self._client.read_discrete_inputs(
                 wire_addr, count=count, **self._device_kwargs()
@@ -165,7 +212,7 @@ class SaldaModbusHub:
 
     async def write_holding_register(self, address: int, value: int) -> bool:
         await self._ensure_connected()
-        wire_addr = address - ADDRESS_OFFSET
+        wire_addr = self._wire_address(address)
         try:
             resp = await self._client.write_register(
                 wire_addr, _to_unsigned16(value), **self._device_kwargs()
@@ -186,7 +233,7 @@ class SaldaModbusHub:
 
     async def write_coil(self, address: int, value: bool) -> bool:
         await self._ensure_connected()
-        wire_addr = address - ADDRESS_OFFSET
+        wire_addr = self._wire_address(address)
         try:
             resp = await self._client.write_coil(
                 wire_addr, value, **self._device_kwargs()

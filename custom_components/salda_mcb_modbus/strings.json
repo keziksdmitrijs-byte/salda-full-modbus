@@ -3,17 +3,20 @@
     "step": {
       "user": {
         "title": "Salda / MCB Modbus TCP",
-        "description": "Enter the connection details of the AHU controller's Modbus TCP gateway.",
+        "description": "Connection parameters of the recuperator's Modbus TCP interface.",
         "data": {
           "host": "Host / IP address",
-          "port": "Port",
-          "slave_id": "Modbus Slave ID",
-          "scan_interval": "Polling interval (seconds)"
+          "port": "TCP port",
+          "slave_id": "Modbus slave (unit) id",
+          "framing": "Modbus framing",
+          "address_offset": "Address mode (1 = send addresses exactly as documented (most controllers), 0 = strict 0-based addressing)",
+          "scan_interval": "Polling interval, s",
+          "skip_connection_test": "Add without connection test"
         }
       }
     },
     "error": {
-      "cannot_connect": "Cannot connect to the device. Check host, port and slave ID, and see the Home Assistant log for the exact pymodbus error.",
+      "cannot_connect": "Cannot connect to the device. Check host, port, slave id and framing, and see the Home Assistant log for the exact pymodbus error. If the unit only answers some registers, enable 'Add without connection test'.",
       "unknown": "Unexpected error, see Home Assistant logs for details."
     },
     "abort": {
@@ -23,10 +26,24 @@
   "options": {
     "step": {
       "init": {
-        "title": "Salda / MCB Modbus TCP options",
+        "title": "Salda / MCB Modbus TCP - connection settings",
         "data": {
-          "scan_interval": "Polling interval (seconds)"
+          "host": "Host / IP address",
+          "port": "TCP port",
+          "slave_id": "Modbus slave (unit) id",
+          "framing": "Modbus framing",
+          "address_offset": "Address mode (1 = documented address, 0 = strict 0-based)",
+          "scan_interval": "Polling interval, s",
+          "skip_connection_test": "Add without connection test"
         }
+      }
+    }
+  },
+  "selector": {
+    "framing": {
+      "options": {
+        "tcp": "Modbus TCP",
+        "rtu_over_tcp": "Modbus RTU over TCP (RS-485 gateway)"
       }
     }
   }

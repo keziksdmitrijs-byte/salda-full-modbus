@@ -3,17 +3,20 @@
     "step": {
       "user": {
         "title": "Salda / MCB Modbus TCP",
-        "description": "Введите параметры подключения к Modbus TCP шлюзу контроллера вентиляционной установки.",
+        "description": "Параметры подключения к Modbus TCP интерфейсу рекуператора.",
         "data": {
-          "host": "IP-адрес / хост",
-          "port": "Порт",
-          "slave_id": "Modbus Slave ID (адрес устройства)",
-          "scan_interval": "Интервал опроса (секунд)"
+          "host": "Host / IP-адрес",
+          "port": "TCP порт",
+          "slave_id": "Modbus slave (unit) id",
+          "framing": "Формат кадра Modbus",
+          "address_offset": "Режим адресации (1 = отправлять адреса точно как в документации (большинство контроллеров), 0 = строгая адресация с 0)",
+          "scan_interval": "Интервал опроса, с",
+          "skip_connection_test": "Добавить без проверки связи"
         }
       }
     },
     "error": {
-      "cannot_connect": "Не удалось подключиться к устройству. Проверьте host, port и slave ID, а также журнал Home Assistant — там точная причина от pymodbus.",
+      "cannot_connect": "Не удалось подключиться. Проверьте host, port, slave id и framing, детали — в журнале Home Assistant. Если устройство отвечает только на часть регистров, включите 'Добавить без проверки связи'.",
       "unknown": "Непредвиденная ошибка, подробности — в журнале Home Assistant."
     },
     "abort": {
@@ -23,10 +26,24 @@
   "options": {
     "step": {
       "init": {
-        "title": "Настройки Salda / MCB Modbus TCP",
+        "title": "Salda / MCB Modbus TCP - параметры соединения",
         "data": {
-          "scan_interval": "Интервал опроса (секунд)"
+          "host": "Host / IP-адрес",
+          "port": "TCP порт",
+          "slave_id": "Modbus slave (unit) id",
+          "framing": "Формат кадра Modbus",
+          "address_offset": "Режим адресации (1 = как в документации, 0 = строго с 0)",
+          "scan_interval": "Интервал опроса, с",
+          "skip_connection_test": "Добавить без проверки связи"
         }
+      }
+    }
+  },
+  "selector": {
+    "framing": {
+      "options": {
+        "tcp": "Modbus TCP",
+        "rtu_over_tcp": "Modbus RTU over TCP (шлюз RS-485)"
       }
     }
   }
