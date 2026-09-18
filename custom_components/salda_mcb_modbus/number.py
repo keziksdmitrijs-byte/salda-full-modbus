@@ -1,10 +1,4 @@
-"""Number platform: writable Holding Registers with a numeric range.
-
-Every parameter the vendor table lists with a min..max range (setpoints,
-timers, PID coefficients, air flow percentages, sensor corrections, etc.)
-is exposed here as a HA `number` entity — shown in the UI as a slider/box
-("polosa izmeneniya" = the adjustable range the user asked for).
-"""
+"""Number platform: writable Holding Registers with a numeric range."""
 from __future__ import annotations
 
 import logging

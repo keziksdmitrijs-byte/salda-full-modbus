@@ -33,16 +33,38 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
 
 
 async def _async_validate_connection(hass, host, port, slave_id):
+    """Try to open a Modbus TCP connection and read one register.
+
+    Returns an error key (for the translations file) or None on success.
+    The *real* exception is always logged with full detail (including
+    tracebacks for anything unexpected) so the HA log tells you exactly
+    what failed instead of a generic "Unexpected error" line.
+    """
     hub = SaldaModbusHub(host, port, slave_id)
     try:
         connected = await hub.async_connect()
         if not connected:
+            _LOGGER.error(
+                "Could not open a Modbus TCP socket to %s:%s (slave id %s)",
+                host, port, slave_id,
+            )
             return "cannot_connect"
         result = await hub.read_holding_registers(1, 1)
         if result is None:
+            _LOGGER.error(
+                "Connected to %s:%s but reading holding register 1 (slave id %s) "
+                "returned no data - see preceding log lines for the pymodbus error",
+                host, port, slave_id,
+            )
             return "cannot_connect"
-    except Exception:  # noqa: BLE001
-        _LOGGER.exception("Unexpected error validating Salda Modbus connection")
+    except ConnectionError as err:
+        _LOGGER.error("Connection error validating Salda Modbus connection: %s", err)
+        return "cannot_connect"
+    except Exception as err:  # noqa: BLE001
+        _LOGGER.exception(
+            "Unexpected error validating Salda Modbus connection to %s:%s: %s",
+            host, port, err,
+        )
         return "unknown"
     finally:
         await hub.async_close()

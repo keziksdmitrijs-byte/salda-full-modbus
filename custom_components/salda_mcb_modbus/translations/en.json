@@ -13,7 +13,7 @@
       }
     },
     "error": {
-      "cannot_connect": "Cannot connect to the device. Check host, port and slave ID.",
+      "cannot_connect": "Cannot connect to the device. Check host, port and slave ID, and see the Home Assistant log for the exact pymodbus error.",
       "unknown": "Unexpected error, see Home Assistant logs for details."
     },
     "abort": {

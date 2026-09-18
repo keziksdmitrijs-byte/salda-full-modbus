@@ -125,8 +125,9 @@ class SaldaModbusCoordinator(DataUpdateCoordinator):
 
         if ok_ranges == 0 and total_ranges > 0:
             raise UpdateFailed(
-                "All Modbus read requests failed - check host/port/slave id "
-                "and that the AHU is powered and reachable"
+                "All Modbus read requests failed - check host/port/slave id, "
+                "that the AHU is powered and reachable, and the Home Assistant "
+                "log for the exact pymodbus error"
             )
 
         if errors:

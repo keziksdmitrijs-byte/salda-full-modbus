@@ -13,7 +13,7 @@
       }
     },
     "error": {
-      "cannot_connect": "Не удалось подключиться к устройству. Проверьте host, port и slave ID.",
+      "cannot_connect": "Не удалось подключиться к устройству. Проверьте host, port и slave ID, а также журнал Home Assistant — там точная причина от pymodbus.",
       "unknown": "Непредвиденная ошибка, подробности — в журнале Home Assistant."
     },
     "abort": {

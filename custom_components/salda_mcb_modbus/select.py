@@ -1,9 +1,4 @@
-"""Select platform: writable Holding Registers with enumerated options.
-
-Every "mode"-style register in the vendor table (system mode, winter/summer,
-heater type, sensor type, etc.) is exposed here as a HA `select` entity so it
-shows up as a dropdown choice, exactly as requested.
-"""
+"""Select platform: writable Holding Registers with enumerated options."""
 from __future__ import annotations
 
 import logging
